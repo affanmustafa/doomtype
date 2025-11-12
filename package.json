@@ -1,10 +1,37 @@
 {
 	"name": "doomtype",
-	"module": "src/index.tsx",
+	"version": "1.0.0",
+	"module": "src/doomtype.tsx",
+	"description": "A terminal-based typing speed test built with React and OpenTUI",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/affanmustafa/doomtype.git"
+	},
+	"bin": {
+		"doomtype": "./src/doomtype.tsx"
+	},
+	"files": [
+		"src/**/*",
+		"README.md"
+	],
 	"type": "module",
-	"private": true,
 	"scripts": {
-		"dev": "bun run --watch src/index.tsx"
+		"dev": "bun run --watch src/doomtype.tsx",
+		"start": "bun run src/doomtype.tsx"
+	},
+	"keywords": [
+		"typing",
+		"speed-test",
+		"cli",
+		"terminal",
+		"tui",
+		"wpm",
+		"monkeytype"
+	],
+	"author": "",
+	"license": "MIT",
+	"engines": {
+		"bun": ">=1.0.0"
 	},
 	"devDependencies": {
 		"@types/bun": "latest"

@@ -1,98 +1,17 @@
-import { TextAttributes, createCliRenderer } from '@opentui/core';
-import { createRoot, useKeyboard } from '@opentui/react';
-import { generate as generateWords } from 'random-words';
+import { TextAttributes } from '@opentui/core';
+import { useKeyboard, useRenderer } from '@opentui/react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { THEME } from '../constants';
+import { TypingField } from './TypingField';
+import { createPrompt, formatSeconds, isPrintableKey } from '../utils';
 
-const THEME = {
-	background: '#030712',
-	panel: '#060913',
-	panelMuted: '#090b12',
-	border: '#1f2a37',
-	gridLine: '#111827',
-	text: '#e2e8f0',
-	textDim: '#94a3b8',
-	accent: '#38bdf8',
-	success: '#7fd18d',
-	error: '#f87171'
-} as const;
+export function App() {
+	const renderer = useRenderer();
 
-const DEFAULT_WORD_COUNT = 28;
-
-const createPrompt = (wordCount = DEFAULT_WORD_COUNT) =>
-	generateWords({
-		exactly: wordCount,
-		join: ' ',
-		formatter: (word) => word.toLowerCase()
-	}) as string;
-
-const formatSeconds = (milliseconds: number) =>
-	(milliseconds / 1000).toFixed(1);
-
-type TypingFieldProps = {
-	characters: string[];
-	typed: string;
-	finished: boolean;
-};
-
-function TypingField({ characters, typed, finished }: TypingFieldProps) {
-	return (
-		<text wrapMode="word" fg={THEME.text}>
-			{characters.map((char, index) => {
-				const typedChar = typed[index];
-				const isCurrent = index === typed.length && !finished;
-
-				if (typedChar !== undefined) {
-					const fg = typedChar === char ? THEME.success : THEME.error;
-					return (
-						<span key={`${char}-${index}`} fg={fg}>
-							{char}
-						</span>
-					);
-				}
-
-				return (
-					<span
-						key={`${char}-${index}`}
-						fg={isCurrent ? '#020617' : THEME.textDim}
-						bg={isCurrent ? THEME.accent : undefined}
-						attributes={
-							isCurrent
-								? TextAttributes.UNDERLINE | TextAttributes.BOLD
-								: undefined
-						}
-					>
-						{char}
-					</span>
-				);
-			})}
-		</text>
-	);
-}
-
-const isPrintableKey = (key: {
-	sequence?: string;
-	ctrl?: boolean;
-	meta?: boolean;
-	option?: boolean;
-	raw?: string;
-}) => {
-	if (!key.sequence || key.sequence.length !== 1) {
-		return false;
-	}
-
-	if (key.ctrl || key.meta || key.option) {
-		return false;
-	}
-
-	if (key.raw && key.raw.startsWith('\u001b')) {
-		return false;
-	}
-
-	const code = key.sequence.charCodeAt(0);
-	return code >= 32 && code <= 126;
-};
-
-function App() {
+	useEffect(() => {
+		// Hide cursor for cleaner look
+		renderer.console.hide();
+	}, [renderer]);
 	const [targetText, setTargetText] = useState(() => createPrompt());
 	const characters = useMemo(() => Array.from(targetText ?? ''), [targetText]);
 
@@ -297,6 +216,3 @@ function App() {
 		</box>
 	);
 }
-
-const renderer = await createCliRenderer();
-createRoot(renderer).render(<App />);
