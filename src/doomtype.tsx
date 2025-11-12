@@ -6,7 +6,7 @@ import { App } from './components/App';
 
 try {
 	const renderer = await createCliRenderer({
-		exitOnCtrlC: false
+		exitOnCtrlC: true
 	});
 
 	createRoot(renderer).render(<App />);

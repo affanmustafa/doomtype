@@ -9,7 +9,6 @@ export function App() {
 	const renderer = useRenderer();
 
 	useEffect(() => {
-		// Hide cursor for cleaner look
 		renderer.console.hide();
 	}, [renderer]);
 	const [targetText, setTargetText] = useState(() => createPrompt());
