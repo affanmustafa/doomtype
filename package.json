@@ -1,6 +1,6 @@
 {
 	"name": "doomtype",
-	"version": "1.0.1",
+	"version": "1.0.2",
 	"module": "src/doomtype.tsx",
 	"description": "A terminal-based typing speed test built with React and OpenTUI",
 	"repository": {
