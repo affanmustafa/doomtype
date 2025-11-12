@@ -1,5 +1,5 @@
 {
-	"name": "clanker-hurry",
+	"name": "doomtype",
 	"module": "src/index.tsx",
 	"type": "module",
 	"private": true,
