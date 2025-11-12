@@ -1,7 +1,7 @@
 import { TextAttributes, createCliRenderer } from '@opentui/core';
 import { createRoot, useKeyboard } from '@opentui/react';
 import { generate as generateWords } from 'random-words';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 const THEME = {
 	background: '#030712',
@@ -72,6 +72,7 @@ function TypingField({ characters, typed, finished }: TypingFieldProps) {
 function App() {
 	const [targetText, setTargetText] = useState(() => createPrompt());
 	const characters = useMemo(() => Array.from(targetText ?? ''), [targetText]);
+	const debugLogged = useRef(0);
 
 	const [typed, setTyped] = useState('');
 	const [startTime, setStartTime] = useState<number | null>(null);
@@ -100,6 +101,15 @@ function App() {
 		setElapsed(0);
 	}, []);
 
+	// Some terminals (notably iTerm2) echo capability responses through stdin.
+	// Resetting right after mount flushes any phantom characters those responses add.
+	useEffect(() => {
+		setTyped('');
+		setStartTime(null);
+		setEndTime(null);
+		setElapsed(0);
+	}, []);
+
 	useEffect(() => {
 		if (!startTime) return;
 		if (endTime) {
@@ -120,6 +130,17 @@ function App() {
 				if (key.ctrl && key.name === 'r') {
 					pickNewPrompt();
 					return;
+				}
+
+				if (!startTime && typed.length === 0 && debugLogged.current < 24) {
+					console.log('[key-event]', {
+						sequence: key.sequence,
+						name: key.name,
+						raw: key.raw,
+						ctrl: key.ctrl,
+						meta: key.meta
+					});
+					debugLogged.current += 1;
 				}
 
 				if (key.name === 'backspace') {
