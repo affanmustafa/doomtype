@@ -1,7 +1,7 @@
 import { TextAttributes, createCliRenderer } from '@opentui/core';
 import { createRoot, useKeyboard } from '@opentui/react';
 import { generate as generateWords } from 'random-words';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 const THEME = {
 	background: '#030712',
@@ -69,15 +69,38 @@ function TypingField({ characters, typed, finished }: TypingFieldProps) {
 	);
 }
 
+const isPrintableKey = (key: {
+	sequence?: string;
+	ctrl?: boolean;
+	meta?: boolean;
+	option?: boolean;
+	raw?: string;
+}) => {
+	if (!key.sequence || key.sequence.length !== 1) {
+		return false;
+	}
+
+	if (key.ctrl || key.meta || key.option) {
+		return false;
+	}
+
+	if (key.raw && key.raw.startsWith('\u001b')) {
+		return false;
+	}
+
+	const code = key.sequence.charCodeAt(0);
+	return code >= 32 && code <= 126;
+};
+
 function App() {
 	const [targetText, setTargetText] = useState(() => createPrompt());
 	const characters = useMemo(() => Array.from(targetText ?? ''), [targetText]);
-	const debugLogged = useRef(0);
 
 	const [typed, setTyped] = useState('');
 	const [startTime, setStartTime] = useState<number | null>(null);
 	const [endTime, setEndTime] = useState<number | null>(null);
 	const [elapsed, setElapsed] = useState(0);
+	const [isReady, setIsReady] = useState(false);
 
 	const finished = typed.length >= characters.length && characters.length > 0;
 	const correctChars = useMemo(
@@ -101,13 +124,11 @@ function App() {
 		setElapsed(0);
 	}, []);
 
-	// Some terminals (notably iTerm2) echo capability responses through stdin.
-	// Resetting right after mount flushes any phantom characters those responses add.
 	useEffect(() => {
-		setTyped('');
-		setStartTime(null);
-		setEndTime(null);
-		setElapsed(0);
+		const timeout = setTimeout(() => {
+			setIsReady(true);
+		}, 100);
+		return () => clearTimeout(timeout);
 	}, []);
 
 	useEffect(() => {
@@ -127,20 +148,13 @@ function App() {
 	useKeyboard(
 		useCallback(
 			(key) => {
-				if (key.ctrl && key.name === 'r') {
-					pickNewPrompt();
+				if (!isReady) {
 					return;
 				}
 
-				if (!startTime && typed.length === 0 && debugLogged.current < 24) {
-					console.log('[key-event]', {
-						sequence: key.sequence,
-						name: key.name,
-						raw: key.raw,
-						ctrl: key.ctrl,
-						meta: key.meta
-					});
-					debugLogged.current += 1;
+				if (key.ctrl && key.name === 'r') {
+					pickNewPrompt();
+					return;
 				}
 
 				if (key.name === 'backspace') {
@@ -153,12 +167,8 @@ function App() {
 					return;
 				}
 
-				const sequence = key.sequence;
-				if (!sequence || key.ctrl || key.meta) {
-					return;
-				}
-
-				if (sequence === '\r' || sequence === '\n' || sequence.length !== 1) {
+				const printable = isPrintableKey(key);
+				if (!printable) {
 					return;
 				}
 
@@ -173,14 +183,21 @@ function App() {
 						return previous;
 					}
 
-					const nextValue = previous + sequence;
+					const nextValue = previous + (key.sequence ?? '');
 					if (nextValue.length === characters.length) {
 						setEndTime(Date.now());
 					}
 					return nextValue;
 				});
 			},
-			[characters.length, finished, pickNewPrompt, startTime, typed.length]
+			[
+				characters.length,
+				finished,
+				isReady,
+				pickNewPrompt,
+				startTime,
+				typed.length
+			]
 		)
 	);
 
